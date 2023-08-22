@@ -5,11 +5,10 @@ from .models import CustomUser
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField()
-    groups = forms.ModelChoiceField(queryset=Group.objects.all().exclude(name='admin'), required=True)  # Add this line
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'cnic', 'password1', 'password2', 'groups')
+        fields = ('username', 'email', 'cnic', 'password1', 'password2')
 
 class LoginForm(AuthenticationForm):
     class Meta:
