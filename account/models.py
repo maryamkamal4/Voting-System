@@ -10,9 +10,6 @@ class CustomUser(AbstractUser):
     is_approved = models.BooleanField(_('approved'), default=False)
     registration_token = models.CharField(_('registration token'), max_length=40, blank=True, null=True)
 
-    def generate_registration_token(self):
-        return get_random_string(length=40)
-
     class Meta:
         swappable = 'AUTH_USER_MODEL'
         verbose_name = _('user')
