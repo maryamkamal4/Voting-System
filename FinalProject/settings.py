@@ -135,28 +135,3 @@ EMAIL_HOST_USER = 'maryamkamal.intern@devsinc.com'
 EMAIL_HOST_PASSWORD = 'wgoawwllcwbqszmh'
 DEFAULT_FROM_EMAIL = 'maryamkamal.intern@devsinc.com'
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',  # Adjust the log level as needed
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'level': 'INFO',  # Adjust the log level as needed
-            'propagate': False,
-        },
-        'account': {
-            'handlers': ['console'],
-            'level': 'DEBUG',  # Adjust the log level as needed
-            'propagate': False,
-        },
-    },
-}
