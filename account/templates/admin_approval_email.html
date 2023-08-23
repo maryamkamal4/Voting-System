@@ -8,6 +8,7 @@
     <p>A new user has registered and requires your approval.</p>
     <p>Username: {{ user.username }}</p>
     <p>Email: {{ user.email }}</p>
-    <p>Please login to the admin panel to approve the user.</p>
+    <p>Please click <a href="{{ approval_link }}">here</a> to approve the user.</p>
 </body>
 </html>
+
