@@ -1,10 +1,10 @@
 from base64 import urlsafe_b64encode
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, View
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from FinalProject import settings
 from account.models import CustomUser
-from .forms import LoginForm, SignUpForm
+from .forms import HalkaForm, LoginForm, SignUpForm
 from django.utils.encoding import force_bytes
 from django.contrib import messages
 from django.core.mail import EmailMessage
@@ -12,12 +12,13 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from .utils import account_activation_token
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.views import LoginView
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
-from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.views.generic import TemplateView
+
 
 class ApproveUserView(View):
     def get(self, request, pk):
@@ -106,7 +107,35 @@ class CustomLoginView(LoginView):
         messages.error(self.request, 'Login failed. Please check your credentials.')
         return super().form_invalid(form)
 
+    def get_success_url(self):
+        if self.request.user.groups.filter(name='admin').exists():
+            return reverse('superuser-dashboard')  # Redirect to superuser dashboard
+        else:
+            return reverse('voter-dashboard')  # Redirect to voter dashboard
 
-def custom_logout(request):
-    logout(request)
-    return redirect(reverse('login'))  # Redirect to login page after logout
+class SuperuserDashboardView(TemplateView):
+    template_name = 'superuser_dashboard.html'
+
+class VoterDashboardView(TemplateView):
+    template_name = 'voter_dashboard.html'
+
+class CustomLogoutView(LogoutView):
+    next_page = reverse_lazy('login')  
+
+
+def halka_addition(request):
+    if request.user.is_superuser:
+        if request.method == 'POST':
+            form = HalkaForm(request.POST)
+            if form.is_valid():
+                form.save()
+                # Add success message
+        else:
+            form = HalkaForm()
+        
+        return render(request, 'halka_addition.html', {'form': form})
+    else:
+        # Handle non-superuser access
+        return HttpResponseForbidden('YOU ARE NOT A SUPERUSER!')
+
+
