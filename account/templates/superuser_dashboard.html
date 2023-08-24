@@ -1,0 +1,10 @@
+{% extends 'dashboard.html' %}
+{% block sidebar %}
+    <!-- Superuser sidebar links -->
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'halka-addition' %}">Halka Addition</a>
+        </li>
+        <!-- Other admin-specific links can go here -->
+    </ul>
+{% endblock %}

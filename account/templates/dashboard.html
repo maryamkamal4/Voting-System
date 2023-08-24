@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <!-- Include the sidebar template here -->
+        {% block sidebar %}
+        {% endblock %}
+    </div>
+    <div class="col-md-9">
+        <!-- Main content for user type -->
+        {% block user_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}
