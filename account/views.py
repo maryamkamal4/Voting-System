@@ -15,6 +15,9 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponse
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+from django.urls import reverse
 
 class ApproveUserView(View):
     def get(self, request, pk):
@@ -102,3 +105,8 @@ class CustomLoginView(LoginView):
     def form_invalid(self, form):
         messages.error(self.request, 'Login failed. Please check your credentials.')
         return super().form_invalid(form)
+
+
+def custom_logout(request):
+    logout(request)
+    return redirect(reverse('login'))  # Redirect to login page after logout
