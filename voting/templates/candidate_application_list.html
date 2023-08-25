@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Candidate Applications</h2>
+  <ul>
+    {% for application in applications %}
+      <li>
+        {{ application.user.username }} - {{ application.user.cnic }} - Halka: {{ application.user.halka }}
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary">Accept</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
