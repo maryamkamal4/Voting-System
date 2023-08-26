@@ -140,14 +140,6 @@ EMAIL_PORT = config('EMAIL_PORT', cast=int, default=587)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
-
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-#     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-#     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
-#     'CLOUD_URL': os.environ.get('CLOUDINARY_URL')
-# }
-
           
 cloudinary_cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
 cloudinary_api_key = os.environ.get('CLOUDINARY_API_KEY')

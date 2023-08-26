@@ -115,14 +115,19 @@ class CustomLoginView(LoginView):
     def get_success_url(self):
         if self.request.user.groups.filter(name='admin').exists():
             return reverse('superuser-dashboard')  # Redirect to superuser dashboard
+        elif self.request.user.groups.filter(name='candidate').exists():
+            return reverse('candidate-dashboard')  # Redirect to voter dashboard
         else:
-            return reverse('voter-dashboard')  # Redirect to voter dashboard
+            return reverse('voter-dashboard') # Redirect to candidate dashboard
 
 class SuperuserDashboardView(TemplateView):
     template_name = 'superuser_dashboard.html'
 
 class VoterDashboardView(TemplateView):
     template_name = 'voter_dashboard.html'
+    
+class CandidateDashboardView(TemplateView):
+    template_name = 'candidate_dashboard.html'
 
 class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('login')  
