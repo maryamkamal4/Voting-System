@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ActivateUserView, ApproveUserView, CustomLogoutView, SignUpView, CustomLoginView, SuperuserDashboardView, VoterDashboardView, halka_addition
+from .views import ActivateUserView, ApproveUserView, CustomLogoutView, HalkaAdditionView, HalkaDeleteView, SignUpView, CustomLoginView, SuperuserDashboardView, VoterDashboardView
 
 urlpatterns = [
     path('', CustomLoginView.as_view(), name='login'),
@@ -8,7 +8,8 @@ urlpatterns = [
     path('signup/', SignUpView.as_view(), name='signup'),
     path('approve-user/<int:pk>', ApproveUserView.as_view(), name='approve-user'),
     path('activate/<str:uidb64>/<str:token>/', ActivateUserView.as_view(), name='activate-user'),
-    path('halka/add/', halka_addition, name='halka-addition'),
     path('dashboard/superuser/', SuperuserDashboardView.as_view(), name='superuser-dashboard'),
     path('dashboard/voter/', VoterDashboardView.as_view(), name='voter-dashboard'),
+    path('halka/add/', HalkaAdditionView.as_view(), name='halka-addition'),
+    path('halka/<int:pk>/delete/', HalkaDeleteView.as_view(), name='halka-delete'),
 ]

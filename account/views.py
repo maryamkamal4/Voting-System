@@ -1,7 +1,7 @@
 from base64 import urlsafe_b64encode
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, View
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse
 from FinalProject import settings
 from account.models import CustomUser
 from .forms import HalkaForm, LoginForm, SignUpForm
@@ -12,12 +12,17 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
 from .utils import account_activation_token
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.views import LoginView, LogoutView
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import TemplateView
+from django.views.generic import CreateView, ListView, DeleteView
+from .models import Halka
+from .forms import HalkaForm
+from django.contrib.auth.mixins import UserPassesTestMixin
+from django.views.generic.edit import FormView
 
 
 class ApproveUserView(View):
@@ -123,19 +128,25 @@ class CustomLogoutView(LogoutView):
     next_page = reverse_lazy('login')  
 
 
-def halka_addition(request):
-    if request.user.is_superuser:
-        if request.method == 'POST':
-            form = HalkaForm(request.POST)
-            if form.is_valid():
-                form.save()
-                # Add success message
-        else:
-            form = HalkaForm()
-        
-        return render(request, 'halka_addition.html', {'form': form})
-    else:
-        # Handle non-superuser access
-        return HttpResponseForbidden('YOU ARE NOT A SUPERUSER!')
+class HalkaAdditionView(UserPassesTestMixin, ListView, FormView):
+    template_name = 'halka_addition.html'
+    model = Halka
+    form_class = HalkaForm  # Include your HalkaForm here
+    success_url = reverse_lazy('halka-addition')
+    context_object_name = 'halkas'
+    extra_context = {'form': form_class()}  # Initialize an instance of the form
 
+    def test_func(self):
+        return self.request.user.is_superuser
+    
+    def form_valid(self, form):
+        form.save()  # This will save the form data to the database
+        return super().form_valid(form)
 
+class HalkaDeleteView(UserPassesTestMixin, DeleteView):
+    model = Halka
+    success_url = reverse_lazy('halka-addition')
+    template_name = 'halka_confirm_delete.html'  # Specify the template name here
+
+    def test_func(self):
+        return self.request.user.is_superuser
