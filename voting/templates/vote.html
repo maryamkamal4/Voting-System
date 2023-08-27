@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h2>Vote for a Candidate</h2>
+  {% if is_polling_active %}
+    <p>Polling is currently active.</p>
+  {% else %}
+    <p>Polling is not active at the moment.</p>
+  {% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <ul>
+      {% for candidate in candidates %}
+        <li>
+          <input type="radio" name="selected_candidate" value="{{ candidate.id }}">
+          {{ candidate.username }} ({{ candidate.halka.name }})
+        </li>
+      {% endfor %}
+    </ul>
+    <button type="submit">Vote</button>
+  </form>
+{% endblock %}

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Party, CandidateApplication
+from .models import Party, CandidateApplication, PollingSchedule
 
 class CandidateApplicationForm(forms.ModelForm):
     party_name = forms.CharField(max_length=100, label='Party Name')
@@ -24,3 +24,9 @@ class CandidateApplicationForm(forms.ModelForm):
         if commit:
             application.save()
         return application
+    
+class PollingScheduleForm(forms.ModelForm):
+    class Meta:
+        model = PollingSchedule
+        fields = ['start_datetime', 'end_datetime']
+
