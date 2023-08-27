@@ -1,4 +1,5 @@
 from base64 import urlsafe_b64encode
+from django.contrib.auth.models import Group  # Import the Group model
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, View
 from django.http import HttpResponse
@@ -60,6 +61,10 @@ class SignUpView(CreateView):
         user.is_active = False
         user.registration_token = account_activation_token.make_token(user)
         user.save()
+        
+        # Get or create the "voter" group and add the user to it
+        voter_group = Group.objects.get(name='voter')
+        user.groups.add(voter_group)
 
         try:
             self.send_admin_approval_email(user, self.request)

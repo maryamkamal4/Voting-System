@@ -1,6 +1,6 @@
 from django.db import models
 from cloudinary.models import CloudinaryField
-from account.models import CustomUser  
+from account.models import CustomUser, Halka  
 
 # Create your models here.
 

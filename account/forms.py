@@ -16,6 +16,13 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = CustomUser
         fields = ('username', 'email', 'cnic', 'halka', 'password1', 'password2')
+    
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.halka = self.cleaned_data.get('halka')  # Assign the selected Halka instance
+        if commit:
+            user.save()
+        return user
 
 
 class LoginForm(AuthenticationForm):

@@ -1,6 +1,9 @@
 {% extends 'dashboard.html' %}
+{% block dashboard_name %}
+    <h2>Admin Dashboard</h2>
+{% endblock %}
+
 {% block sidebar %}
-    <!-- Superuser sidebar links -->
     <ul class="nav flex-column">
         <li class="nav-item">
             <a class="nav-link" href="{% url 'halka-addition' %}">Halka Addition</a>
