@@ -1,0 +1,16 @@
+{% extends 'dashboard.html' %}
+{% block dashboard_name %}
+    <h2>Candidate Dashboard</h2>
+{% endblock %}
+{% block content %}
+    <h3>{{ message }}</h3>
+    {% if message == 'Polling has ended. Here are your total votes:' %}
+        <h4>Your Total Votes: {{ total_votes }}</h4>
+        <h4>Votes Received:</h4>
+        <ul>
+            {% for vote in candidate_votes %}
+                <li>{{ vote.voter.username }} - {{ vote.vote_count }} votes</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

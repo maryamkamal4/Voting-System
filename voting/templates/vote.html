@@ -2,7 +2,7 @@
 {% block content %}
   {% if voting_open %}
     <h1>Cast Your Vote</h1>
-    <p>Voting is open until {{ polling_schedule.end_datetime }}.</p>
+    <p>Voting is open until {{ polling_schedule.end_datetime }}</p>
     <form method="post">
       {% csrf_token %}
       {{ form.as_p }}

@@ -1,4 +1,3 @@
-import pdb
 from django.db import models
 from cloudinary.models import CloudinaryField
 from account.models import CustomUser, Halka  
@@ -29,9 +28,10 @@ class Vote(models.Model):
     voter = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     candidate = models.ForeignKey(CustomUser, related_name='votes_received', on_delete=models.CASCADE)
     halka = models.ForeignKey(Halka, on_delete=models.CASCADE)
-    
+    vote_count = models.PositiveIntegerField(default=0)  # New field for vote count
+
     def __str__(self):
-        return f"Vote by {self.voter.username} for {self.candidate.username}"
+        return f"{self.vote_count} votes for {self.candidate.username}"
 
 
 class PollingSchedule(models.Model):

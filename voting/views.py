@@ -1,8 +1,10 @@
+from datetime import datetime
 from click import Group
 from django.shortcuts import redirect, render
 from django.views import View
 from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
+import pytz
 from FinalProject import settings
 from account.models import CustomUser
 from voting.models import CandidateApplication, PollingSchedule, Vote
@@ -95,56 +97,6 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
 
         return self.get(request, *args, **kwargs)
 
-# class VoteView(LoginRequiredMixin, FormView):
-#     template_name = 'vote.html'
-#     form_class = VoteForm
-#     success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
-
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         kwargs['user_halka'] = self.request.user.halka
-#         return kwargs
-
-#     def form_valid(self, form):
-#         candidate = form.cleaned_data['candidate']
-#         voter = self.request.user
-#         halka = voter.halka
-
-#         # Check if the voter has already cast a vote in this halka
-#         if Vote.objects.filter(voter=voter, halka=halka).exists():
-#             return redirect('voter-dashboard')  # Redirect with a message that vote already cast
-        
-#         # Create a new Vote instance
-#         vote = Vote(voter=voter, candidate=candidate, halka=halka)
-#         vote.save()
-
-#         return super().form_valid(form)
-
-# class VoteView(LoginRequiredMixin, FormView):
-#     template_name = 'vote.html'
-#     form_class = VoteForm
-#     success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
-
-#     def get_form_kwargs(self):
-#         kwargs = super().get_form_kwargs()
-#         kwargs['user_halka'] = self.request.user.halka
-#         return kwargs
-
-#     def form_valid(self, form):
-#         candidate = form.cleaned_data['candidate']
-#         voter = self.request.user
-#         halka = voter.halka
-
-#         # Check if the voter has already cast a vote in this halka
-#         if Vote.objects.filter(voter=voter, halka=halka).exists():
-#             return redirect('vote-cast-multiple-times')
-        
-#         # Create a new Vote instance
-#         vote = Vote(voter=voter, candidate=candidate, halka=halka)
-#         vote.save()
-
-#         return redirect('vote-cast-success')
-
 class VoteView(LoginRequiredMixin, FormView):
     template_name = 'vote.html'
     form_class = VoteForm
@@ -156,9 +108,6 @@ class VoteView(LoginRequiredMixin, FormView):
             polling_schedule = PollingSchedule.objects.latest('start_datetime')
             context['voting_open'] = polling_schedule.is_voting_open()
             context['polling_schedule'] = polling_schedule
-            print("Voting Open:", context['voting_open'])
-            print("Start Datetime:", polling_schedule.start_datetime)
-            print("End Datetime:", polling_schedule.end_datetime)
         except PollingSchedule.DoesNotExist:
             context['voting_open'] = False
         return context
@@ -181,6 +130,13 @@ class VoteView(LoginRequiredMixin, FormView):
         vote = Vote(voter=voter, candidate=candidate, halka=halka)
         vote.save()
 
+        # Increment the vote count for the respective candidate
+        # candidate.votes_received.vote_count += 1  # Assuming you've set up the related_name correctly
+        # candidate.votes_received.save()
+        candidate_vote = Vote.objects.get(voter=voter, candidate=candidate)
+        candidate_vote.vote_count += 1
+        candidate_vote.save()
+
         return redirect('vote-cast-success')
 
 class VoteCastedSuccessView(TemplateView):
@@ -193,7 +149,7 @@ class VoteCastedMultipleTimesView(TemplateView):
 class PollingScheduleView(UserPassesTestMixin, FormView):
     template_name = 'set_polling_schedule.html'
     form_class = PollingScheduleForm
-    success_url = '/'  # Change this to the appropriate URL
+    success_url = '/dashboard/superuser/'  # Change this to the appropriate URL
 
     def test_func(self):
         return self.request.user.groups.filter(name='admin').exists()
@@ -201,3 +157,44 @@ class PollingScheduleView(UserPassesTestMixin, FormView):
     def form_valid(self, form):
         form.save()
         return super().form_valid(form)
+
+
+class CandidateTotalVotesView(LoginRequiredMixin, View):
+    template_name = 'candidate_total_votes.html'
+
+    def get(self, request):
+        candidate = self.request.user
+        candidate_votes = Vote.objects.filter(candidate=candidate)
+        total_votes = sum(vote.vote_count for vote in candidate_votes)
+        
+        try:
+            polling_schedule = PollingSchedule.objects.latest('start_datetime')
+            now = datetime.now(pytz.timezone('Asia/Karachi'))
+
+            start_date = polling_schedule.start_datetime.date()
+            end_date = polling_schedule.end_datetime.date()
+            start_time = polling_schedule.start_datetime.time()
+            end_time = polling_schedule.end_datetime.time()
+
+            current_date = now.date()
+            current_time = now.time()
+
+            if start_date <= current_date <= end_date or current_date >= end_date:
+                if current_time > end_time:
+                    message = 'Polling has ended. Here are your total votes:'
+                elif current_time >= start_time or start_time <= current_time <= end_time:
+                    message = 'Polling is in progress. You can view the results later.'
+                else:
+                    message = 'Polling hasn\'t started yet.'
+            else:
+                message = 'Polling hasn\'t started yet.'
+        except PollingSchedule.DoesNotExist:
+            message = 'Polling schedule information not available.'
+
+        context = {
+            'candidate': candidate,
+            'candidate_votes': candidate_votes,
+            'total_votes': total_votes,
+            'message': message,
+        }
+        return render(request, self.template_name, context)
