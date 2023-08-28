@@ -6,8 +6,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from FinalProject import settings
 from account.models import CustomUser
 from voting.models import CandidateApplication, PollingSchedule, Vote
-from .forms import CandidateApplicationForm
-from django.views.generic import ListView
+from .forms import CandidateApplicationForm, PollingScheduleForm, VoteForm
+from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.urls import reverse, reverse_lazy
@@ -27,9 +27,8 @@ from django.core.mail import send_mail
 from django.utils.translation import gettext as _
 from django.contrib.auth import logout
 from django.contrib.auth.models import Group
-from .forms import PollingScheduleForm
 from django.contrib.auth.decorators import user_passes_test
-
+import pdb
 
 
 class BecomeCandidateView(LoginRequiredMixin, FormView):
@@ -96,64 +95,109 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
 
         return self.get(request, *args, **kwargs)
 
-class VoteView(LoginRequiredMixin, View):
+# class VoteView(LoginRequiredMixin, FormView):
+#     template_name = 'vote.html'
+#     form_class = VoteForm
+#     success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
+
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         kwargs['user_halka'] = self.request.user.halka
+#         return kwargs
+
+#     def form_valid(self, form):
+#         candidate = form.cleaned_data['candidate']
+#         voter = self.request.user
+#         halka = voter.halka
+
+#         # Check if the voter has already cast a vote in this halka
+#         if Vote.objects.filter(voter=voter, halka=halka).exists():
+#             return redirect('voter-dashboard')  # Redirect with a message that vote already cast
+        
+#         # Create a new Vote instance
+#         vote = Vote(voter=voter, candidate=candidate, halka=halka)
+#         vote.save()
+
+#         return super().form_valid(form)
+
+# class VoteView(LoginRequiredMixin, FormView):
+#     template_name = 'vote.html'
+#     form_class = VoteForm
+#     success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
+
+#     def get_form_kwargs(self):
+#         kwargs = super().get_form_kwargs()
+#         kwargs['user_halka'] = self.request.user.halka
+#         return kwargs
+
+#     def form_valid(self, form):
+#         candidate = form.cleaned_data['candidate']
+#         voter = self.request.user
+#         halka = voter.halka
+
+#         # Check if the voter has already cast a vote in this halka
+#         if Vote.objects.filter(voter=voter, halka=halka).exists():
+#             return redirect('vote-cast-multiple-times')
+        
+#         # Create a new Vote instance
+#         vote = Vote(voter=voter, candidate=candidate, halka=halka)
+#         vote.save()
+
+#         return redirect('vote-cast-success')
+
+class VoteView(LoginRequiredMixin, FormView):
     template_name = 'vote.html'
+    form_class = VoteForm
+    success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
 
-    def get(self, request):
-        polling_schedule = PollingSchedule.objects.first()
-        is_polling_active = polling_schedule.is_polling_active()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        try:
+            polling_schedule = PollingSchedule.objects.latest('start_datetime')
+            context['voting_open'] = polling_schedule.is_voting_open()
+            context['polling_schedule'] = polling_schedule
+            print("Voting Open:", context['voting_open'])
+            print("Start Datetime:", polling_schedule.start_datetime)
+            print("End Datetime:", polling_schedule.end_datetime)
+        except PollingSchedule.DoesNotExist:
+            context['voting_open'] = False
+        return context
 
-        voter = request.user
-        voter_halka = voter.halka
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user_halka'] = self.request.user.halka
+        return kwargs
 
-        # Get candidates from the same halka who are approved
-        candidates = CustomUser.objects.filter(groups__name='candidate', halka=voter_halka, is_approved=True)
+    def form_valid(self, form):
+        candidate = form.cleaned_data['candidate']
+        voter = self.request.user
+        halka = voter.halka
 
-        return render(request, self.template_name, {'candidates': candidates, 'is_polling_active': is_polling_active})
+        # Check if the voter has already cast a vote in this halka
+        if Vote.objects.filter(voter=voter, halka=halka).exists():
+            return redirect('vote-cast-multiple-times')
+            
+        # Create a new Vote instance
+        vote = Vote(voter=voter, candidate=candidate, halka=halka)
+        vote.save()
 
+        return redirect('vote-cast-success')
 
-    def post(self, request):
-        selected_candidate_id = request.POST.get('selected_candidate')
-        if selected_candidate_id:
-            selected_candidate = CustomUser.objects.get(pk=selected_candidate_id)
+class VoteCastedSuccessView(TemplateView):
+    template_name = 'vote_casted_success.html'
 
-            # Check if the voter has already voted for this halka
-            if Vote.objects.filter(voter=request.user, halka=selected_candidate.halka).exists():
-                messages.error(request, 'You have already voted for this halka.')
-            else:
-                Vote.objects.create(voter=request.user, candidate=selected_candidate, halka=selected_candidate.halka)
-                messages.success(request, 'Vote cast successfully.')
-        else:
-            messages.error(request, 'No candidate selected.')
-
-        return redirect(reverse('voter-dashboard'))  # Replace with appropriate URL
-
-class CandidateResultsView(LoginRequiredMixin, View):
-    template_name = 'candidate_results.html'
-
-    def get(self, request):
-        if request.user.groups.filter(name='candidate').exists():
-            received_votes = Vote.objects.filter(candidate=request.user)
-            return render(request, self.template_name, {'received_votes': received_votes})
-        else:
-            messages.error(request, 'You are not a candidate.')
-            return redirect(reverse('voter-dashboard'))  # Replace with appropriate URL
+class VoteCastedMultipleTimesView(TemplateView):
+    template_name = 'vote_casted_multiple.html'
 
 
-class SetPollingScheduleView(LoginRequiredMixin, View):
+class PollingScheduleView(UserPassesTestMixin, FormView):
     template_name = 'set_polling_schedule.html'
     form_class = PollingScheduleForm
+    success_url = '/'  # Change this to the appropriate URL
 
-    @user_passes_test(lambda u: u.groups.filter(name='admin').exists(), login_url='voter-dashboard')
-    def get(self, request):
-        form = self.form_class()
-        return render(request, self.template_name, {'form': form})
+    def test_func(self):
+        return self.request.user.groups.filter(name='admin').exists()
 
-    @user_passes_test(lambda u: u.groups.filter(name='admin').exists(), login_url='voter-dashboard')
-    def post(self, request):
-        form = self.form_class(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Polling schedule updated successfully.')
-            return redirect('voter-dashboard')  # Replace with appropriate URL
-        return render(request, self.template_name, {'form': form})
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)

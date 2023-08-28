@@ -1,7 +1,7 @@
+<!-- templates/set_polling_schedule.html -->
 {% extends 'base.html' %}
-
 {% block content %}
-  <h2>Set Polling Schedule</h2>
+  <h1>Set Polling Schedule</h1>
   <form method="post">
     {% csrf_token %}
     {{ form.as_p }}

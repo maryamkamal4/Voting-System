@@ -1,0 +1,8 @@
+<!-- templates/vote_casted_success.html -->
+
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Vote Casted Successfully</h1>
+  <p>Your vote has been casted successfully.</p>
+  <a href="{% url 'voter-dashboard' %}">Return to Voter Dashboard</a>
+{% endblock %}

@@ -1,15 +1,17 @@
 from django import forms
-from .models import Party, CandidateApplication, PollingSchedule
+from account.models import CustomUser
+from .models import Party, CandidateApplication, PollingSchedule, Vote
+from cloudinary.forms import CloudinaryFileField
 
 class CandidateApplicationForm(forms.ModelForm):
     party_name = forms.CharField(max_length=100, label='Party Name')
-    symbol = forms.ImageField(label='Party Symbol', required=False)
+    symbol = CloudinaryFileField(label='Party Symbol', required=False)  # Use CloudinaryFileField
 
     class Meta:
         model = CandidateApplication
         fields = []
 
-    def save(self, user=None, commit=True):  # Pass the user as a parameter
+    def save(self, user=None, commit=True):
         party_name = self.cleaned_data.get('party_name')
         symbol = self.cleaned_data.get('symbol')
         
@@ -19,14 +21,28 @@ class CandidateApplicationForm(forms.ModelForm):
             party.save()
 
         application = super().save(commit=False)
-        application.user = user  # Use the user parameter
+        application.user = user
         application.party = party
         if commit:
             application.save()
         return application
-    
+
+class VoteForm(forms.ModelForm):
+    class Meta:
+        model = Vote
+        fields = ['candidate']
+
+    def __init__(self, *args, **kwargs):
+        user_halka = kwargs.pop('user_halka')  # Get the user's halka from kwargs
+        super().__init__(*args, **kwargs)
+        self.fields['candidate'].queryset = CustomUser.objects.filter(groups__name='candidate', halka=user_halka)
+
+
 class PollingScheduleForm(forms.ModelForm):
     class Meta:
         model = PollingSchedule
         fields = ['start_datetime', 'end_datetime']
-
+        widgets = {
+            'start_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_datetime': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }

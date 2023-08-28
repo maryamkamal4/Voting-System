@@ -1,22 +1,20 @@
 {% extends 'base.html' %}
-
 {% block content %}
-  <h2>Vote for a Candidate</h2>
-  {% if is_polling_active %}
-    <p>Polling is currently active.</p>
+  {% if voting_open %}
+    <h1>Cast Your Vote</h1>
+    <p>Voting is open until {{ polling_schedule.end_datetime }}.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Vote</button>
+    </form>
   {% else %}
-    <p>Polling is not active at the moment.</p>
+    <h1>Voting Hasn't Begun Yet</h1>
+    {% if polling_schedule.start_datetime > now %}
+      <p>The voting process will start at {{ polling_schedule.start_datetime }}.</p>
+    {% else %}
+      <p>The voting process has not started yet. Please check back later.</p>
+    {% endif %}
+    <a href="{% url 'voter-dashboard' %}">Go to Voter Dashboard</a>
   {% endif %}
-  <form method="post">
-    {% csrf_token %}
-    <ul>
-      {% for candidate in candidates %}
-        <li>
-          <input type="radio" name="selected_candidate" value="{{ candidate.id }}">
-          {{ candidate.username }} ({{ candidate.halka.name }})
-        </li>
-      {% endfor %}
-    </ul>
-    <button type="submit">Vote</button>
-  </form>
 {% endblock %}

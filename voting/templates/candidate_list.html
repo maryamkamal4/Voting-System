@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Candidate List</h1>
+  <ul>
+    {% for candidate in candidates %}
+      <li>
+        {{ candidate.username }} - {{ candidate.email }}
+        <form method="post" action="{% url 'vote' %}">
+          {% csrf_token %}
+          <input type="hidden" name="candidate_id" value="{{ candidate.id }}">
+          <button type="submit">Vote</button>
+        </form>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

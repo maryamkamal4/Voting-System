@@ -141,20 +141,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
           
-cloudinary_cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
-cloudinary_api_key = os.environ.get('CLOUDINARY_API_KEY')
-cloudinary_api_secret = os.environ.get('CLOUDINARY_API_SECRET')
-
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': cloudinary_cloud_name,
-    'API_KEY': cloudinary_api_key,
-    'API_SECRET': cloudinary_api_secret,
-}
-
 cloudinary.config(
-    cloud_name=cloudinary_cloud_name,
-    api_key=cloudinary_api_key,
-    api_secret=cloudinary_api_secret
+    cloud_name=config('CLOUDINARY_CLOUD_NAME'),
+    api_key=config('CLOUDINARY_API_KEY'),
+    api_secret=config('CLOUDINARY_API_SECRET')
 )
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

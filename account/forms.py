@@ -6,16 +6,16 @@ from cloudinary.forms import CloudinaryFileField
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField()
-    # profile_picture = CloudinaryFileField(
-    #     options={"folder": "profile_pictures/"},
-    #     required=False,
-    #     label="Profile Picture"
-    # )
+    profile_picture = CloudinaryFileField(
+        options={"folder": "profile_pictures/"},
+        required=False,
+        label="Profile Picture"
+    )
     halka = forms.ModelChoiceField(queryset=Halka.objects.all(), label="Select Halka")
 
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'cnic', 'halka', 'password1', 'password2')
+        fields = ('username', 'email', 'cnic', 'profile_picture', 'halka', 'password1', 'password2')
     
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -23,7 +23,6 @@ class SignUpForm(UserCreationForm):
         if commit:
             user.save()
         return user
-
 
 class LoginForm(AuthenticationForm):
     class Meta:

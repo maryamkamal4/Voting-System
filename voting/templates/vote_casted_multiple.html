@@ -1,0 +1,8 @@
+<!-- templates/vote_casted_multiple_times.html -->
+
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Vote Casted Multiple Times</h1>
+  <p>You have already casted a vote in this halka.</p>
+  <a href="{% url 'voter-dashboard' %}">Return to Voter Dashboard</a>
+{% endblock %}
