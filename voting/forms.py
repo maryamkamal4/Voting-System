@@ -5,7 +5,7 @@ from cloudinary.forms import CloudinaryFileField
 
 class CandidateApplicationForm(forms.ModelForm):
     party_name = forms.CharField(max_length=100, label='Party Name')
-    symbol = CloudinaryFileField(label='Party Symbol', required=False)  # Use CloudinaryFileField
+    symbol = CloudinaryFileField(label='Party Symbol', required=True)  # Use CloudinaryFileField
 
     class Meta:
         model = CandidateApplication

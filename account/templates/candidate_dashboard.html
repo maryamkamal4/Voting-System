@@ -17,19 +17,39 @@
         {% if polling_schedule %}
             {% if not polling_schedule.is_voting_open %}
                 {% if current_time > polling_schedule.end_datetime.time %}
-                    <p>Polling has ended. Here are the winners:</p>
-                    <ul>
-                        {% for halka, winner_info in winners_by_halka.items %}
-                            <li>
-                                Halka: {{ halka.name }}
-                                {% if winner_info %}
-                                    Winner: {{ winner_info.candidate.username }} (Total Votes: {{ winner_info.votes }})
-                                {% else %}
-                                    No winner declared for this halka.
-                                {% endif %}
-                            </li>
-                        {% endfor %}
-                    </ul>
+                <div class="container">
+                    <p class="mt-3">Polling has ended. Here are the winners:</p>
+                    <table class="table table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Halka</th>
+                                <th>Winner</th>
+                                <th>Total Votes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for halka, winner_info in winners_by_halka.items %}
+                                <tr>
+                                    <td>{{ halka.name }}</td>
+                                    <td>
+                                        {% if winner_info %}
+                                            {{ winner_info.candidate.username }}
+                                        {% else %}
+                                            No winner declared for this halka.
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if winner_info %}
+                                            {{ winner_info.votes }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>                
                 {% elif current_time >= polling_schedule.start_datetime.time and current_time <= polling_schedule.end_datetime.time %}
                     <p>Polling is in progress. Winners will be announced shortly.</p>
                 {% else %}

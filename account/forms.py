@@ -8,7 +8,7 @@ class SignUpForm(UserCreationForm):
     email = forms.EmailField()
     profile_picture = CloudinaryFileField(
         options={"folder": "profile_pictures/"},
-        required=False,
+        required=True,
         label="Profile Picture"
     )
     halka = forms.ModelChoiceField(queryset=Halka.objects.all(), label="Select Halka")
