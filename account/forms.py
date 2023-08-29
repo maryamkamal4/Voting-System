@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser, Halka
 from cloudinary.forms import CloudinaryFileField
 
@@ -23,10 +23,6 @@ class SignUpForm(UserCreationForm):
         if commit:
             user.save()
         return user
-
-class LoginForm(AuthenticationForm):
-    class Meta:
-        model = CustomUser
 
 class HalkaForm(forms.ModelForm):
     class Meta:

@@ -4,15 +4,52 @@
 {% endblock %}
 
 {% block sidebar %}
-    <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'halka-addition' %}">Halka Addition</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'candidate-application-list' %}">Approve Candidates</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="{% url 'set-polling-schedule' %}">Set Polling Schedule</a>
-        </li>
-    </ul>
+<div class="list-group list-group-flush">
+    <a class="list-group-item list-group-item-action active" href="{% url 'superuser-dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </a>
+    <a class="list-group-item list-group-item-action" href="{% url 'halka-addition' %}">
+        <i class="bi bi-people"></i> Halka Addition
+    </a>
+    <a class="list-group-item list-group-item-action" href="{% url 'candidate-application-list' %}">
+        <i class="bi bi-check-circle"></i> Approve Candidates
+    </a>
+    <a class="list-group-item list-group-item-action" href="{% url 'set-polling-schedule' %}">
+        <i class="bi bi-calendar-event"></i> Set Polling Schedule
+    </a>
+</div>
 {% endblock %}
+{% block winner_display %}
+    <div class="winners-section">
+        {% if polling_schedule %}
+            {% if not polling_schedule.is_voting_open %}
+                {% if current_time > polling_schedule.end_datetime.time %}
+                    <p>Polling has ended. Here are the winners:</p>
+                    <ul>
+                        {% for halka, winner_info in winners_by_halka.items %}
+                            <li>
+                                Halka: {{ halka.name }}
+                                {% if winner_info %}
+                                    Winner: {{ winner_info.candidate.username }} (Total Votes: {{ winner_info.votes }})
+                                {% else %}
+                                    No winner declared for this halka.
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% elif current_time >= polling_schedule.start_datetime.time and current_time <= polling_schedule.end_datetime.time %}
+                    <p>Polling is in progress. Winners will be announced shortly.</p>
+                {% else %}
+                    <p>Polling has not started yet.</p>
+                {% endif %}
+            {% else %}
+                <p>Polling is currently open.</p>
+            {% endif %}
+        {% else %}
+            <p>Polling schedule information not available.</p>
+        {% endif %}
+    </div>
+{% endblock %}
+
+
+

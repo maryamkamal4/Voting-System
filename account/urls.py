@@ -2,9 +2,7 @@ from django.urls import path
 from .views import ActivateUserView, ApproveUserView, CandidateDashboardView, CustomLogoutView, HalkaAdditionView, HalkaDeleteView, SignUpView, CustomLoginView, SuperuserDashboardView, VoterDashboardView
 
 urlpatterns = [
-    path('', CustomLoginView.as_view(), name='login'),
-    path('login/', CustomLoginView.as_view(), name='login'),
-    path('logout/', CustomLogoutView.as_view(), name='custom_logout'),
+    path('logout/', CustomLogoutView.as_view(), name='logout'),
     path('signup/', SignUpView.as_view(), name='signup'),
     path('approve-user/<int:pk>', ApproveUserView.as_view(), name='approve-user'),
     path('activate/<str:uidb64>/<str:token>/', ActivateUserView.as_view(), name='activate-user'),

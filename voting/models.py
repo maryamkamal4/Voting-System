@@ -5,8 +5,6 @@ from datetime import datetime
 import pytz
 
 
-# Create your models here.
-
 class Party(models.Model):
     name = models.CharField(max_length=100)
     symbol = CloudinaryField('party_symbol', null=True, blank=True)

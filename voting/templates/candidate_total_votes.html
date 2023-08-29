@@ -1,7 +1,5 @@
-{% extends 'dashboard.html' %}
-{% block dashboard_name %}
-    <h2>Candidate Dashboard</h2>
-{% endblock %}
+{% extends 'base.html' %}
+
 {% block content %}
     <h3>{{ message }}</h3>
     {% if message == 'Polling has ended. Here are your total votes:' %}

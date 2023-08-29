@@ -1,18 +1,19 @@
 from datetime import datetime
+import pdb
 from click import Group
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 import pytz
 from FinalProject import settings
-from account.models import CustomUser
+from account.models import CustomUser, Halka
 from voting.models import CandidateApplication, PollingSchedule, Vote
 from .forms import CandidateApplicationForm, PollingScheduleForm, VoteForm
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
-from django.urls import reverse, reverse_lazy
 from django.core.mail import send_mail
 from django.utils.translation import gettext as _
 from django.contrib.auth import logout
@@ -29,10 +30,10 @@ from django.core.mail import send_mail
 from django.utils.translation import gettext as _
 from django.contrib.auth import logout
 from django.contrib.auth.models import Group
-from django.contrib.auth.decorators import user_passes_test
-import pdb
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
-
+@method_decorator(login_required, name='dispatch')
 class BecomeCandidateView(LoginRequiredMixin, FormView):
     template_name = 'become_candidate.html'
     form_class = CandidateApplicationForm
@@ -52,6 +53,7 @@ class BecomeCandidateView(LoginRequiredMixin, FormView):
         return super().form_valid(form)
 
 
+@method_decorator(login_required, name='dispatch')
 class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = 'candidate_application_list.html'
     model = CandidateApplication
@@ -97,10 +99,10 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
 
         return self.get(request, *args, **kwargs)
 
+@method_decorator(login_required, name='dispatch')
 class VoteView(LoginRequiredMixin, FormView):
     template_name = 'vote.html'
     form_class = VoteForm
-    success_url = '/dashboard/voter/'  # Redirect to voter dashboard after voting
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -130,26 +132,25 @@ class VoteView(LoginRequiredMixin, FormView):
         vote = Vote(voter=voter, candidate=candidate, halka=halka)
         vote.save()
 
-        # Increment the vote count for the respective candidate
-        # candidate.votes_received.vote_count += 1  # Assuming you've set up the related_name correctly
-        # candidate.votes_received.save()
         candidate_vote = Vote.objects.get(voter=voter, candidate=candidate)
         candidate_vote.vote_count += 1
         candidate_vote.save()
 
         return redirect('vote-cast-success')
 
+@method_decorator(login_required, name='dispatch')
 class VoteCastedSuccessView(TemplateView):
     template_name = 'vote_casted_success.html'
 
+@method_decorator(login_required, name='dispatch')
 class VoteCastedMultipleTimesView(TemplateView):
     template_name = 'vote_casted_multiple.html'
 
 
+@method_decorator(login_required, name='dispatch')
 class PollingScheduleView(UserPassesTestMixin, FormView):
     template_name = 'set_polling_schedule.html'
     form_class = PollingScheduleForm
-    success_url = '/dashboard/superuser/'  # Change this to the appropriate URL
 
     def test_func(self):
         return self.request.user.groups.filter(name='admin').exists()
@@ -158,7 +159,11 @@ class PollingScheduleView(UserPassesTestMixin, FormView):
         form.save()
         return super().form_valid(form)
 
+    def get_success_url(self):
+        # Redirect to the superuser dashboard
+        return reverse_lazy('superuser-dashboard')
 
+@method_decorator(login_required, name='dispatch')
 class CandidateTotalVotesView(LoginRequiredMixin, View):
     template_name = 'candidate_total_votes.html'
 
