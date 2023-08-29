@@ -11,9 +11,10 @@
 </head>
 <body>
 
-{% include 'navbar.html' %} <!-- Include the navbar template here -->
+{% include 'navbar.html' %}
 
 <div class="container mt-4">
+    {% include 'alerts.html' %}
     {% block content %}
     {% endblock %}
 </div>
