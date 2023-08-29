@@ -1,21 +1,17 @@
 from base64 import urlsafe_b64encode
-from datetime import datetime
-from django.contrib.auth.models import Group  # Import the Group model
+from django.contrib.auth.models import Group
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, View
 from django.http import HttpResponse
-import pytz
-from django.db.models import Sum
 from FinalProject import settings
 from account.models import CustomUser
-from voting.models import PollingSchedule, Vote
 from .forms import HalkaForm, SignUpForm
 from django.utils.encoding import force_bytes
 from django.contrib import messages
 from django.core.mail import EmailMessage
 from django.contrib.sites.shortcuts import get_current_site
 from django.template.loader import render_to_string
-from .utils import account_activation_token
+from .utils import account_activation_token, get_polling_schedule_context
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth import logout, login, authenticate
@@ -55,6 +51,7 @@ class ApproveUserView(View):
         )
         email = EmailMessage(mail_subject, message, to=[user.email])
         email.send()
+        messages.success(request, f'You have approved the user. {user.username} can now activate their account.')
         return HttpResponse(f'You have approved the user. {user.username} can now activate their account.')
 
 class SignUpView(CreateView):
@@ -68,7 +65,6 @@ class SignUpView(CreateView):
         user.registration_token = account_activation_token.make_token(user)
         user.save()
         
-        # Get or create the "voter" group and add the user to it
         voter_group = Group.objects.get(name='voter')
         user.groups.add(voter_group)
 
@@ -107,8 +103,10 @@ class ActivateUserView(View):
         if user is not None and token == user.registration_token:
             user.is_active = True
             user.save()
-            return redirect('login')  # Redirect to the login page after activation
+            messages.success(request, 'Your account has been activated. You can now log in.')
+            return redirect('login')
         else:
+            messages.error(request, 'Activation failed. Please contact support.')
             return HttpResponse('Activation failed.')
 
 class CustomLoginView(View):
@@ -139,9 +137,7 @@ class CustomLoginView(View):
 
 class CustomLogoutView(View):
     def get(self, request):
-        print(request.user)
         logout(request)
-        print(request.user)
         messages.success(request, 'You have been logged out.')
         return redirect('login')  # Replace with the actual name of your login URL
 
@@ -152,43 +148,9 @@ class SuperuserDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        try:
-            polling_schedule = PollingSchedule.objects.latest('start_datetime')
-            now = datetime.now(pytz.timezone('Asia/Karachi'))
-            
-            context['polling_schedule'] = polling_schedule
-            context['current_time'] = now.time()
-
-            if not polling_schedule.is_voting_open():
-                winners_by_halka = self.get_winners_by_halka()
-                context['winners_by_halka'] = winners_by_halka
-        except PollingSchedule.DoesNotExist:
-            pass
+        context.update(get_polling_schedule_context())
+        
         return context
-
-    def get_winners_by_halka(self):
-        winners_by_halka = {}
-        halkas = Halka.objects.all()  # Update this based on your model
-        for halka in halkas:
-            winners_by_halka[halka] = self.get_winner_for_halka(halka)
-        return winners_by_halka
-
-    def get_winner_for_halka(self, halka):
-        candidates = CustomUser.objects.filter(groups__name='candidate', halka=halka)
-        winner = None
-        max_votes = 0
-        for candidate in candidates:
-            candidate_votes = Vote.objects.filter(candidate=candidate, halka=halka).aggregate(Sum('vote_count'))['vote_count__sum']
-            if candidate_votes is None:
-                candidate_votes = 0
-            if candidate_votes > max_votes:
-                max_votes = candidate_votes
-                winner = {
-                    'candidate': candidate,
-                    'halka': halka,
-                    'votes': candidate_votes,
-                }
-        return winner
 
 
 @method_decorator(login_required, name='dispatch')
@@ -198,43 +160,9 @@ class VoterDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        try:
-            polling_schedule = PollingSchedule.objects.latest('start_datetime')
-            now = datetime.now(pytz.timezone('Asia/Karachi'))
-            
-            context['polling_schedule'] = polling_schedule
-            context['current_time'] = now.time()
-
-            if not polling_schedule.is_voting_open():
-                winners_by_halka = self.get_winners_by_halka()
-                context['winners_by_halka'] = winners_by_halka
-        except PollingSchedule.DoesNotExist:
-            pass
+        context.update(get_polling_schedule_context())
+        
         return context
-
-    def get_winners_by_halka(self):
-        winners_by_halka = {}
-        halkas = Halka.objects.all()  # Update this based on your model
-        for halka in halkas:
-            winners_by_halka[halka] = self.get_winner_for_halka(halka)
-        return winners_by_halka
-
-    def get_winner_for_halka(self, halka):
-        candidates = CustomUser.objects.filter(groups__name='candidate', halka=halka)
-        winner = None
-        max_votes = 0
-        for candidate in candidates:
-            candidate_votes = Vote.objects.filter(candidate=candidate, halka=halka).aggregate(Sum('vote_count'))['vote_count__sum']
-            if candidate_votes is None:
-                candidate_votes = 0
-            if candidate_votes > max_votes:
-                max_votes = candidate_votes
-                winner = {
-                    'candidate': candidate,
-                    'halka': halka,
-                    'votes': candidate_votes,
-                }
-        return winner
 
 @method_decorator(login_required, name='dispatch')
 class CandidateDashboardView(TemplateView):
@@ -243,43 +171,10 @@ class CandidateDashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        try:
-            polling_schedule = PollingSchedule.objects.latest('start_datetime')
-            now = datetime.now(pytz.timezone('Asia/Karachi'))
-            
-            context['polling_schedule'] = polling_schedule
-            context['current_time'] = now.time()
-
-            if not polling_schedule.is_voting_open():
-                winners_by_halka = self.get_winners_by_halka()
-                context['winners_by_halka'] = winners_by_halka
-        except PollingSchedule.DoesNotExist:
-            pass
+        context.update(get_polling_schedule_context())
+        
         return context
 
-    def get_winners_by_halka(self):
-        winners_by_halka = {}
-        halkas = Halka.objects.all()  # Update this based on your model
-        for halka in halkas:
-            winners_by_halka[halka] = self.get_winner_for_halka(halka)
-        return winners_by_halka
-
-    def get_winner_for_halka(self, halka):
-        candidates = CustomUser.objects.filter(groups__name='candidate', halka=halka)
-        winner = None
-        max_votes = 0
-        for candidate in candidates:
-            candidate_votes = Vote.objects.filter(candidate=candidate, halka=halka).aggregate(Sum('vote_count'))['vote_count__sum']
-            if candidate_votes is None:
-                candidate_votes = 0
-            if candidate_votes > max_votes:
-                max_votes = candidate_votes
-                winner = {
-                    'candidate': candidate,
-                    'halka': halka,
-                    'votes': candidate_votes,
-                }
-        return winner
 
 @method_decorator(login_required, name='dispatch')
 class HalkaAdditionView(UserPassesTestMixin, ListView, FormView):
@@ -295,6 +190,7 @@ class HalkaAdditionView(UserPassesTestMixin, ListView, FormView):
     
     def form_valid(self, form):
         form.save()  # This will save the form data to the database
+        messages.success(self.request, 'Halka has been added successfully.')
         return super().form_valid(form)
 
 @method_decorator(login_required, name='dispatch')
@@ -305,3 +201,10 @@ class HalkaDeleteView(UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         return self.request.user.is_superuser
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance_name = str(instance)  # Adjust this based on your model's __str__ representation
+
+        messages.success(request, f'Halka "{instance_name}" has been deleted successfully.')
+        return super().delete(request, *args, **kwargs)

@@ -1,5 +1,4 @@
 from datetime import datetime
-import pdb
 from click import Group
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -8,7 +7,6 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 import pytz
 from FinalProject import settings
-from account.models import CustomUser, Halka
 from voting.models import CandidateApplication, PollingSchedule, Vote
 from .forms import CandidateApplicationForm, PollingScheduleForm, VoteForm
 from django.views.generic import ListView, TemplateView
@@ -37,7 +35,7 @@ from django.utils.decorators import method_decorator
 class BecomeCandidateView(LoginRequiredMixin, FormView):
     template_name = 'become_candidate.html'
     form_class = CandidateApplicationForm
-    success_url = '/'  # Change this to the appropriate URL
+    success_url = '/'
 
     def form_valid(self, form):
         application = form.save(user=self.request.user, commit=False)
@@ -50,6 +48,7 @@ class BecomeCandidateView(LoginRequiredMixin, FormView):
         # Log out the user
         logout(self.request)
 
+        messages.success(self.request, 'Your application to become a candidate has been submitted successfully.')
         return super().form_valid(form)
 
 
@@ -97,6 +96,7 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
             except CandidateApplication.DoesNotExist:
                 messages.error(request, 'Error while accepting application.')
 
+        messages.success(request, 'Application accepted and user promoted to candidate.')
         return self.get(request, *args, **kwargs)
 
 @method_decorator(login_required, name='dispatch')
@@ -136,6 +136,7 @@ class VoteView(LoginRequiredMixin, FormView):
         candidate_vote.vote_count += 1
         candidate_vote.save()
 
+        messages.success(self.request, 'Your vote has been cast successfully.')
         return redirect('vote-cast-success')
 
 @method_decorator(login_required, name='dispatch')
@@ -157,6 +158,7 @@ class PollingScheduleView(UserPassesTestMixin, FormView):
 
     def form_valid(self, form):
         form.save()
+        messages.success(self.request, 'Polling schedule has been set successfully.')
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -202,4 +204,5 @@ class CandidateTotalVotesView(LoginRequiredMixin, View):
             'total_votes': total_votes,
             'message': message,
         }
+        messages.info(request, message)
         return render(request, self.template_name, context)
