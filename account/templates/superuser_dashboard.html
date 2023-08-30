@@ -1,0 +1,26 @@
+{% extends 'dashboard.html' %}
+
+{% block dashboard_name %}
+    <h2>Admin Dashboard</h2>
+{% endblock %}
+
+{% block sidebar %}
+<div class="list-group list-group-flush">
+    <a class="list-group-item list-group-item-action" href="{% url 'halka-addition' %}">
+        <i class="bi bi-people"></i> Halka Addition
+    </a>
+    <a class="list-group-item list-group-item-action" href="{% url 'candidate-application-list' %}">
+        <i class="bi bi-check-circle"></i> Approve Candidates
+    </a>
+    <a class="list-group-item list-group-item-action" href="{% url 'set-polling-schedule' %}">
+        <i class="bi bi-calendar-event"></i> Set Polling Schedule
+    </a>
+</div>
+{% endblock %}
+
+{% block winner_display %}
+    {% include 'winners.html' %}
+{% endblock %}
+
+
+

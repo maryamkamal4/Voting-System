@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4">Vote Casted Multiple Times</h1>
+  <p>You have already casted a vote in this halka.</p>
+  <div class="mt-3">
+    <a href="{% url 'voter-dashboard' %}" class="text-secondary">Go back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

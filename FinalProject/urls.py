@@ -16,8 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from account.views import CustomLoginView
+
+handler404 = 'account.views.handler404'
+
 urlpatterns = [
-    path('', include('account.urls')),
+    path('', CustomLoginView.as_view(), name='login'),
     path('account/', include('account.urls')),
+    path('voting/', include('voting.urls')),
     path('admin/', admin.site.urls),
 ]

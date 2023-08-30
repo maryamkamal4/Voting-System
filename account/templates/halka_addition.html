@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Add New Halka</h3>
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="btn btn-primary">Add Halka</button>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-3">
+                <a href="{% url 'superuser-dashboard' %}" class="text-secondary">Go to Dashboard</a>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="card-title">Existing Halkas</h3>
+                    <ul class="list-group">
+                        {% for halka in halkas %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ halka.name }}
+                            <div>
+                                <a href="{% url 'halka-delete' halka.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if not halkas %}
+                    <p class="mt-3">No halkas available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

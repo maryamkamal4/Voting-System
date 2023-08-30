@@ -3,15 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your App</title>
-    <!-- Include Bootstrap CSS here -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cloudinary/2.13.4/cloudinary.min.js" integrity="sha384-JA/l5WuV7lhY13Z0+IzSGaP/7XqqWK8POrNrWjNwGpj4AzdHQ1k7ENgM8tPJ8pTj" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.6/cropper.min.js" integrity="sha384-Nk5WQ3BtXczB2lw31KWvfF1ra7o/7t8meG9t3Yt8u8vA9G+Ijjjw8hA0b41fHplZ" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <title>Voting Machine</title>
 </head>
 <body>
 
-{% include 'navbar.html' %} <!-- Include the navbar template here -->
+{% include 'navbar.html' %}
 
 <div class="container mt-4">
+    {% include 'alerts.html' %}
     {% block content %}
     {% endblock %}
 </div>

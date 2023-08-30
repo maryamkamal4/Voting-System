@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    {% block dashboard_name %}
+        <h2>Generic Dashboard</h2>
+    {% endblock %}
+
+    <div class="d-flex" id="wrapper">
+        <div class="bg-light border-right" id="sidebar-wrapper">
+            {% block sidebar %}
+            {% endblock %}
+        </div>
+        <div id="page-content-wrapper" class="flex-grow-1">
+            <div class="container-fluid">
+                {% block winner_display %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

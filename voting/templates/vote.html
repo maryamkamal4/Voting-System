@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        {% if voting_open %}
+          <div class="card">
+            <div class="card-body">
+              <h1 class="card-title">Cast Your Vote</h1>
+              <p>Voting is open until {{ polling_schedule.end_datetime }}</p>
+              <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Vote</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div class="card">
+            <div class="card-body">
+              <h1 class="card-title">Voting Hasn't Begun Yet</h1>
+              {% if polling_schedule.start_datetime > now %}
+                <p>The voting process will start at {{ polling_schedule.start_datetime }}.</p>
+              {% else %}
+                <p>The voting process has not started yet. Please check back later.</p>
+              {% endif %}
+              <a href="{% url 'voter-dashboard' %}" class="btn btn-secondary">Go to Voter Dashboard</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
