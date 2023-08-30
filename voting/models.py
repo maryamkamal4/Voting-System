@@ -54,6 +54,11 @@ class PollingSchedule(models.Model):
         
         return False
 
+class Candidate(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    party = models.ForeignKey(Party, on_delete=models.CASCADE)
+    is_approved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.user.username
     
-
-

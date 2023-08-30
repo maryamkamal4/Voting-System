@@ -7,7 +7,7 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 import pytz
 from FinalProject import settings
-from voting.models import CandidateApplication, PollingSchedule, Vote
+from voting.models import Candidate, CandidateApplication, Party, PollingSchedule, Vote
 from .forms import CandidateApplicationForm, PollingScheduleForm, VoteForm
 from django.views.generic import ListView, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -30,6 +30,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from account.models import CustomUser
 
 @method_decorator(login_required, name='dispatch')
 class BecomeCandidateView(LoginRequiredMixin, FormView):
@@ -79,6 +80,12 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                 # Change user's is_active to True
                 user.is_active = True
                 user.save()
+                
+                candidate, created = Candidate.objects.get_or_create(
+                user=user,
+                party=application.party,
+                is_approved=True 
+                )
 
                 # Send email to the user
                 send_mail(
@@ -88,7 +95,7 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                     recipient_list=[user.email],
                     fail_silently=False,
                 )
-
+                
                 # Delete the CandidateApplication instance
                 application.delete()
 
@@ -96,7 +103,6 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
             except CandidateApplication.DoesNotExist:
                 messages.error(request, 'Error while accepting application.')
 
-        messages.success(request, 'Application accepted and user promoted to candidate.')
         return self.get(request, *args, **kwargs)
 
 @method_decorator(login_required, name='dispatch')
@@ -206,3 +212,9 @@ class CandidateTotalVotesView(LoginRequiredMixin, View):
         }
         messages.info(request, message)
         return render(request, self.template_name, context)
+
+
+def candidate_profiles(request):
+    candidates = Candidate.objects.filter(is_approved=True)
+    return render(request, 'candidate_profiles.html', {'candidates': candidates})
+

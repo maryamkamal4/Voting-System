@@ -51,7 +51,6 @@ class ApproveUserView(View):
         )
         email = EmailMessage(mail_subject, message, to=[user.email])
         email.send()
-        messages.success(request, f'You have approved the user. {user.username} can now activate their account.')
         return HttpResponse(f'You have approved the user. {user.username} can now activate their account.')
 
 class SignUpView(CreateView):
