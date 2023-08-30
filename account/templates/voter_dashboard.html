@@ -1,12 +1,11 @@
 {% extends 'dashboard.html' %}
+
 {% block dashboard_name %}
     <h2>Voter Dashboard</h2>
 {% endblock %}
+
 {% block sidebar %} 
 <div class="list-group list-group-flush">
-    <a class="list-group-item list-group-item-action active" href="{% url 'voter-dashboard' %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
     <a class="list-group-item list-group-item-action" href="{% url 'become-candidate' %}">
         <i class="bi bi-pencil-square"></i> Become a Candidate
     </a>
@@ -15,6 +14,7 @@
     </a>
 </div>
 {% endblock %}
+
 {% block winner_display %}
     {% include 'winners.html' %}
 {% endblock %}

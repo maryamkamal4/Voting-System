@@ -1,17 +1,17 @@
 {% extends 'dashboard.html' %}
+
 {% block dashboard_name %}
     <h2>Candidate Dashboard</h2>
 {% endblock %}
+
 {% block sidebar %}
 <div class="list-group list-group-flush">
-    <a class="list-group-item list-group-item-action active" href="{% url 'candidate-dashboard' %}">
-        <i class="bi bi-speedometer2"></i> Dashboard
-    </a>
     <a class="list-group-item list-group-item-action" href="{% url 'candidate-total-votes' %}">
         <i class="bi bi-bar-chart"></i> View Total Votes
     </a>
 </div>
 {% endblock %}
+
 {% block winner_display %}
     {% include 'winners.html' %}
 {% endblock %}

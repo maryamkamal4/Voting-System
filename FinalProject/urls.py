@@ -18,6 +18,8 @@ from django.urls import include, path
 
 from account.views import CustomLoginView
 
+handler404 = 'account.views.handler404'
+
 urlpatterns = [
     path('', CustomLoginView.as_view(), name='login'),
     path('account/', include('account.urls')),

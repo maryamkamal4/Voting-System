@@ -1,9 +1,17 @@
+{% load custom_filters %}
 <div class="winners-section">
     {% if polling_schedule %}
         {% if not polling_schedule.is_voting_open %}
-            {% if current_time > polling_schedule.end_datetime.time %}
+            {% if polling_schedule|has_polling_ended %}
             <div class="container">
-                <p class="mt-3">Polling has ended. Here are the winners:</p>
+                <h2 class="mt-3">Winners List</h2>
+                
+                <form id="search-form" method="get" action="">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="search-input" name="search" placeholder="Search by Halka name">
+                    </div>
+                </form>
+                <p class="mt-3">Polling has ended. Here are the winners:</p>           
                 <table class="table table-bordered">
                     <thead class="thead-light">
                         <tr>
@@ -13,8 +21,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for halka, winner_info in winners_by_halka.items %}
-                            <tr>
+                        {% for halka, winner_info in winners_paginated %}
+                            <tr class="result-row">
                                 <td>{{ halka.name }}</td>
                                 <td>
                                     {% if winner_info %}
@@ -33,17 +41,51 @@
                             </tr>
                         {% endfor %}
                     </tbody>
-                </table>
-            </div>                                
-            {% elif current_time >= polling_schedule.start_datetime.time and current_time <= polling_schedule.end_datetime.time %}
-                <p>Polling is in progress. Winners will be announced shortly.</p>
+                </table>        
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if winners_paginated.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ winners_paginated.previous_page_number }}">previous</a>
+                        {% endif %}
+                        
+                        <span class="current">
+                            Page {{ winners_paginated.number }} of {{ winners_paginated.paginator.num_pages }}.
+                        </span>
+                        
+                        {% if winners_paginated.has_next %}
+                            <a href="?page={{ winners_paginated.next_page_number }}">next</a>
+                            <a href="?page={{ winners_paginated.paginator.num_pages }}">last &raquo;</a>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% elif current_time|is_time_within_range %}
+                <p class="mt-3">Polling is in progress. Winners will be announced shortly.</p>
             {% else %}
-                <p>Polling has not started yet.</p>
+                <p class="mt-3">Polling has not started yet.</p>
             {% endif %}
         {% else %}
-            <p>Polling is currently open.</p>
+            <p class="mt-3">Polling is currently open.</p>
         {% endif %}
     {% else %}
-        <p>Polling schedule information not available.</p>
+        <p class="mt-3">Polling schedule information not available.</p>
     {% endif %}
 </div>
+<script>
+    const searchInput = document.getElementById('search-input');
+    const resultRows = document.querySelectorAll('.result-row');
+
+    searchInput.addEventListener('input', () => {
+        const searchTerm = searchInput.value.trim().toLowerCase();
+        resultRows.forEach(row => {
+            const halkaName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+            row.style.display = halkaName.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    const searchForm = document.getElementById('search-form');
+    searchForm.addEventListener('submit', event => {
+        event.preventDefault();
+    });
+</script>

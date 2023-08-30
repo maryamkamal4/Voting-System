@@ -147,9 +147,7 @@ class SuperuserDashboardView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        context.update(get_polling_schedule_context())
-        
+        context.update(get_polling_schedule_context(self.request))
         return context
 
 
@@ -159,9 +157,7 @@ class VoterDashboardView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        context.update(get_polling_schedule_context())
-        
+        context.update(get_polling_schedule_context(self.request))
         return context
 
 @method_decorator(login_required, name='dispatch')
@@ -170,9 +166,7 @@ class CandidateDashboardView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        context.update(get_polling_schedule_context())
-        
+        context.update(get_polling_schedule_context(self.request))
         return context
 
 
@@ -208,3 +202,7 @@ class HalkaDeleteView(UserPassesTestMixin, DeleteView):
 
         messages.success(request, f'Halka "{instance_name}" has been deleted successfully.')
         return super().delete(request, *args, **kwargs)
+
+
+def handler404(request, exception):
+    return render(request, '404page.html', status=404)

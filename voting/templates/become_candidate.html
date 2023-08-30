@@ -1,10 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <h2>Apply for Candidacy</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Submit Application</button>
-  </form>
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h2 class="card-title">Apply for Candidacy</h2>
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              {{ form.as_p }}
+              <button type="submit" class="btn btn-primary btn-block">Submit Application</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-md-12 text-center">
+        <a href="{% url 'voter-dashboard' %}" class="text-secondary">Go back to Dashboard</a>
+      </div>
+    </div>
+  </div>
 {% endblock %}
