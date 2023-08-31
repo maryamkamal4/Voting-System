@@ -69,15 +69,12 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                 application = CandidateApplication.objects.get(pk=application_id)
                 user = application.user
 
-                # Remove user from the 'voter' group
                 voter_group = Group.objects.get(name='voter')
                 user.groups.remove(voter_group)
 
-                # Add user to the 'candidate' group
                 candidate_group = Group.objects.get(name='candidate')
                 user.groups.add(candidate_group)
 
-                # Change user's is_active to True
                 user.is_active = True
                 user.save()
                 
@@ -87,7 +84,6 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                 is_approved=True 
                 )
 
-                # Send email to the user
                 send_mail(
                     subject=_('Candidacy Application Approved'),
                     message=_('Congratulations! Your candidacy application has been approved.'),
@@ -130,11 +126,9 @@ class VoteView(LoginRequiredMixin, FormView):
         voter = self.request.user
         halka = voter.halka
 
-        # Check if the voter has already cast a vote in this halka
         if Vote.objects.filter(voter=voter, halka=halka).exists():
             return redirect('vote-cast-multiple-times')
             
-        # Create a new Vote instance
         vote = Vote(voter=voter, candidate=candidate, halka=halka)
         vote.save()
 
@@ -168,7 +162,6 @@ class PollingScheduleView(UserPassesTestMixin, FormView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        # Redirect to the superuser dashboard
         return reverse_lazy('superuser-dashboard')
 
 @method_decorator(login_required, name='dispatch')
@@ -213,7 +206,7 @@ class CandidateTotalVotesView(LoginRequiredMixin, View):
         messages.info(request, message)
         return render(request, self.template_name, context)
 
-
+@method_decorator(login_required(login_url='login'), name='dispatch')
 def candidate_profiles(request):
     candidates = Candidate.objects.filter(is_approved=True)
     return render(request, 'candidate_profiles.html', {'candidates': candidates})
