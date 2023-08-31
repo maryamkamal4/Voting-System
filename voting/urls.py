@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import BecomeCandidateView, CandidateApplicationListView, CandidateTotalVotesView, PollingScheduleView, VoteCastedMultipleTimesView, VoteCastedSuccessView, VoteView, candidate_profiles
+from .views import BecomeCandidateView, CandidateApplicationListView, CandidateTotalVotesView, PollingScheduleView, VoteCastedMultipleTimesView, VoteCastedSuccessView, VoteView, VotersListView, candidate_profiles
 
 urlpatterns = [
     path('candidate-applications/', CandidateApplicationListView.as_view(), name='candidate-application-list'),
@@ -10,4 +10,6 @@ urlpatterns = [
     path('set-polling-schedule/', PollingScheduleView.as_view(), name='set-polling-schedule'),
     path('candidate-total-votes/', CandidateTotalVotesView.as_view(), name='candidate-total-votes'),
     path('candidate-profiles/', candidate_profiles, name='candidate-profiles'),
+    path('candidate/voters/', VotersListView.as_view(), name='voters-list'),
+
 ]

@@ -19,7 +19,7 @@ class SignUpForm(UserCreationForm):
     
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.halka = self.cleaned_data.get('halka')  # Assign the selected Halka instance
+        user.halka = self.cleaned_data.get('halka')  
         if commit:
             user.save()
         return user
@@ -27,4 +27,19 @@ class SignUpForm(UserCreationForm):
 class HalkaForm(forms.ModelForm):
     class Meta:
         model = Halka
-        fields = ['name']  # Customize fields as needed
+        fields = ['name']  
+
+class InvitationForm(forms.Form):
+    selected_user = forms.ModelChoiceField(
+        queryset=CustomUser.objects.filter(groups__name='voter'),
+        empty_label="Select a user",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['halka'] = forms.ModelChoiceField(
+            queryset=Halka.objects.all(),
+            empty_label="Select a halka",
+            widget=forms.Select(attrs={'class': 'form-control'})
+        )

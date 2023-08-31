@@ -5,7 +5,7 @@ from django.views.generic import CreateView, View
 from django.http import HttpResponse
 from FinalProject import settings
 from account.models import CustomUser
-from .forms import HalkaForm, SignUpForm
+from .forms import HalkaForm, InvitationForm, SignUpForm
 from django.utils.encoding import force_bytes
 from django.contrib import messages
 from django.core.mail import EmailMessage
@@ -19,13 +19,14 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
-from django.views.generic import CreateView, ListView, DeleteView
+from django.views.generic import CreateView, DeleteView
 from .models import Halka
 from .forms import HalkaForm
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.views.generic.edit import FormView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.core.mail import send_mail
 
 
 class ApproveUserView(View):
@@ -88,6 +89,7 @@ class SignUpView(CreateView):
         })
         admin_email = settings.EMAIL_HOST_USER
         email = EmailMessage(mail_subject, message, to=[admin_email])
+        email.content_subtype = "html" 
         email.send()
 
 class ActivateUserView(View):
@@ -170,10 +172,10 @@ class CandidateDashboardView(TemplateView):
 
 
 @method_decorator(login_required, name='dispatch')
-class HalkaAdditionView(UserPassesTestMixin, ListView, FormView):
+class HalkaAdditionView(UserPassesTestMixin, FormView):
     template_name = 'halka_addition.html'
     model = Halka
-    form_class = HalkaForm  # Include your HalkaForm here
+    form_class = HalkaForm  
     success_url = reverse_lazy('halka-addition')
     context_object_name = 'halkas'
     extra_context = {'form': form_class()}  # Initialize an instance of the form
@@ -205,3 +207,23 @@ class HalkaDeleteView(UserPassesTestMixin, DeleteView):
 
 def handler404(request, exception):
     return render(request, '404page.html', status=404)
+
+class SendInvitationEmailView(FormView):
+    template_name = 'send_invitation_email.html'
+    form_class = InvitationForm
+    success_url = reverse_lazy('send-invitation-email')
+
+    def form_valid(self, form):
+        selected_user = form.cleaned_data['selected_user']
+        selected_halka = form.cleaned_data['halka']
+
+        user = CustomUser.objects.get(username=selected_user)
+
+        # Send the invitation email
+        subject = 'Your Voting Invitation'
+        message = f'Hello {user.username},\n\nYou are invited to vote in halka {selected_halka}. Your CNIC: {user.cnic}. Login to your account and vote.'
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [user.email]
+        send_mail(subject, message, from_email, recipient_list)
+
+        return super().form_valid(form)

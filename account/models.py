@@ -21,9 +21,9 @@ class CustomUser(AbstractUser):
 
 
     profile_picture = CloudinaryField(
-        'profile_picture',  # Cloudinary field name
-        null=True,  # Allow NULL in the database
-        blank=True,  # Allow blank field in forms
+        'profile_picture',
+        null=True,  
+        blank=True,  
     )
 
     class Meta:

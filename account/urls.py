@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import ActivateUserView, ApproveUserView, CandidateDashboardView, CustomLogoutView, HalkaAdditionView, HalkaDeleteView, SignUpView, CustomLoginView, SuperuserDashboardView, VoterDashboardView
+from .views import ActivateUserView, ApproveUserView, CandidateDashboardView, CustomLogoutView, HalkaAdditionView, HalkaDeleteView, SendInvitationEmailView, SignUpView, CustomLoginView, SuperuserDashboardView, VoterDashboardView
 
 urlpatterns = [
     path('logout/', CustomLogoutView.as_view(), name='logout'),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('dashboard/candidate/', CandidateDashboardView.as_view(), name='candidate-dashboard'),
     path('halka/add/', HalkaAdditionView.as_view(), name='halka-addition'),
     path('halka/<int:pk>/delete/', HalkaDeleteView.as_view(), name='halka-delete'),
+    path('send-invitation-email/', SendInvitationEmailView.as_view(), name='send-invitation-email'),
 ]

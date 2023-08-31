@@ -218,3 +218,15 @@ def candidate_profiles(request):
     candidates = Candidate.objects.filter(is_approved=True)
     return render(request, 'candidate_profiles.html', {'candidates': candidates})
 
+@method_decorator(login_required(login_url='login'), name='dispatch')
+class VotersListView(ListView):
+    template_name = 'voters_list.html'
+    context_object_name = 'voters'
+
+    def get_queryset(self):
+        # Retrieve the halka of the logged-in candidate
+        candidate_halka = self.request.user.halka
+
+        # Retrieve the voters in the candidate's halka
+        voters = CustomUser.objects.filter(halka=candidate_halka, groups__name='voter')
+        return voters
