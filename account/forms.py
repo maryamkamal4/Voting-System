@@ -36,10 +36,17 @@ class InvitationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    halka = forms.ModelChoiceField(
+        queryset=Halka.objects.all(),
+        empty_label="Select a halka",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    selected_cnic = forms.ChoiceField(
+        choices=[('', 'Select a CNIC')] + [(user.cnic, user.cnic) for user in CustomUser.objects.filter(groups__name='voter')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['halka'] = forms.ModelChoiceField(
-            queryset=Halka.objects.all(),
-            empty_label="Select a halka",
-            widget=forms.Select(attrs={'class': 'form-control'})
-        )

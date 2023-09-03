@@ -1,9 +1,10 @@
 from base64 import urlsafe_b64encode
 from django.contrib.auth.models import Group
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, View
+from django.views.generic import CreateView, View, ListView
 from django.http import HttpResponse
 from FinalProject import settings
+from account.decorators import admin_required, candidate_required, voter_required
 from account.models import CustomUser
 from .forms import HalkaForm, InvitationForm, SignUpForm
 from django.utils.encoding import force_bytes
@@ -95,7 +96,6 @@ class SignUpView(CreateView):
 class ActivateUserView(View):
     def get(self, request, uidb64, token):
         try:
-            # Decode uidb64 to get the primary key value
             user_pk = urlsafe_base64_decode(uidb64)
             user = CustomUser.objects.get(pk=user_pk)
         except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
@@ -126,15 +126,25 @@ class CustomLoginView(View):
             login(request, user)
             messages.success(request, 'You are now logged in.')
 
-            if user.groups.filter(name='admin').exists():
-                return redirect('superuser-dashboard')  # Redirect to superuser dashboard
-            elif user.groups.filter(name='candidate').exists():
-                return redirect('candidate-dashboard')  # Redirect to candidate dashboard
+            # Get the latest user group
+            latest_group = user.groups.last()
+            
+            if latest_group is not None:
+                group_name = latest_group.name
+                if group_name == 'admin':
+                    return redirect('superuser-dashboard')  # Redirect to superuser dashboard
+                elif group_name == 'candidate':
+                    return redirect('candidate-dashboard')  # Redirect to candidate dashboard
+                else:
+                    return redirect('voter-dashboard')  # Redirect to voter dashboard
             else:
-                return redirect('voter-dashboard')  # Redirect to voter dashboard
+                # Handle the case where the user is not in any group
+                messages.error(request, 'Login failed. User is not in any group.')
+                return redirect('login')
         else:
             messages.error(request, 'Login failed. Please check your credentials.')
-            return redirect('login')  # Replace with the actual name of your login URL
+            return redirect('login')
+
 
 class CustomLogoutView(View):
     def get(self, request):
@@ -142,7 +152,9 @@ class CustomLogoutView(View):
         messages.success(request, 'You have been logged out.')
         return redirect('login')  # Replace with the actual name of your login URL
 
+
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class SuperuserDashboardView(TemplateView):
     template_name = 'superuser_dashboard.html'
     
@@ -153,6 +165,7 @@ class SuperuserDashboardView(TemplateView):
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(voter_required, name='dispatch')
 class VoterDashboardView(TemplateView):
     template_name = 'voter_dashboard.html'
     
@@ -161,10 +174,12 @@ class VoterDashboardView(TemplateView):
         context.update(get_polling_schedule_context(self.request))
         return context
 
+
 @method_decorator(login_required, name='dispatch')
+@method_decorator(candidate_required, name='dispatch')
 class CandidateDashboardView(TemplateView):
     template_name = 'candidate_dashboard.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(get_polling_schedule_context(self.request))
@@ -172,7 +187,8 @@ class CandidateDashboardView(TemplateView):
 
 
 @method_decorator(login_required, name='dispatch')
-class HalkaAdditionView(UserPassesTestMixin, FormView):
+@method_decorator(admin_required, name='dispatch')
+class HalkaAdditionView(UserPassesTestMixin, ListView, FormView):
     template_name = 'halka_addition.html'
     model = Halka
     form_class = HalkaForm  
@@ -187,6 +203,7 @@ class HalkaAdditionView(UserPassesTestMixin, FormView):
         form.save()  # This will save the form data to the database
         messages.success(self.request, 'Halka has been added successfully.')
         return super().form_valid(form)
+
 
 @method_decorator(login_required, name='dispatch')
 class HalkaDeleteView(UserPassesTestMixin, DeleteView):
@@ -208,6 +225,9 @@ class HalkaDeleteView(UserPassesTestMixin, DeleteView):
 def handler404(request, exception):
     return render(request, '404page.html', status=404)
 
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class SendInvitationEmailView(FormView):
     template_name = 'send_invitation_email.html'
     form_class = InvitationForm
@@ -216,14 +236,16 @@ class SendInvitationEmailView(FormView):
     def form_valid(self, form):
         selected_user = form.cleaned_data['selected_user']
         selected_halka = form.cleaned_data['halka']
+        selected_cnic = form.cleaned_data['selected_cnic']
 
         user = CustomUser.objects.get(username=selected_user)
 
         # Send the invitation email
         subject = 'Your Voting Invitation'
-        message = f'Hello {user.username},\n\nYou are invited to vote in halka {selected_halka}. Your CNIC: {user.cnic}. Login to your account and vote.'
+        message = f'Hello {user.username},\n\nYou are invited to vote in halka {selected_halka}. Your CNIC: {selected_cnic}. Login to your account and vote.'
         from_email = settings.EMAIL_HOST_USER
         recipient_list = [user.email]
         send_mail(subject, message, from_email, recipient_list)
 
         return super().form_valid(form)
+

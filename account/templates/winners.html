@@ -17,7 +17,6 @@
                         <tr>
                             <th>Halka</th>
                             <th>Winner</th>
-                            <th>Total Votes</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,13 +28,6 @@
                                         {{ winner_info.candidate.username }}
                                     {% else %}
                                         No winner declared for this halka.
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if winner_info %}
-                                        {{ winner_info.votes }}
-                                    {% else %}
-                                        N/A
                                     {% endif %}
                                 </td>
                             </tr>

@@ -1,5 +1,6 @@
 from datetime import datetime
 from click import Group
+from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -7,6 +8,7 @@ from django.views.generic.edit import FormView
 from django.contrib.auth.mixins import LoginRequiredMixin
 import pytz
 from FinalProject import settings
+from account.decorators import admin_required, candidate_required, voter_required
 from voting.models import Candidate, CandidateApplication, Party, PollingSchedule, Vote
 from .forms import CandidateApplicationForm, PollingScheduleForm, VoteForm
 from django.views.generic import ListView, TemplateView
@@ -33,27 +35,37 @@ from django.utils.decorators import method_decorator
 from account.models import CustomUser
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(voter_required, name='dispatch')
 class BecomeCandidateView(LoginRequiredMixin, FormView):
     template_name = 'become_candidate.html'
     form_class = CandidateApplicationForm
-    success_url = '/'
+    success_url = reverse_lazy('become-candidate')
 
     def form_valid(self, form):
-        application = form.save(user=self.request.user, commit=False)
+        party_name = form.cleaned_data.get('party_name')
+        party_symbol = form.cleaned_data.get('symbol')
+
+        if Party.objects.filter(name=party_name).exists():
+            messages.error(self.request, 'A party with this name already exists.')
+            return self.form_invalid(form)
+    
+        if CandidateApplication.objects.filter(user=self.request.user).exists():
+            messages.error(self.request, 'You have already submitted an application.')
+            return self.form_invalid(form)
+
+        party = Party.objects.create(name=party_name, symbol=party_symbol)
+
+        application = form.save(commit=False)
+        application.user = self.request.user
+        application.party = party
         application.save()
-
-        # Change user's is_active to False
-        self.request.user.is_active = False
-        self.request.user.save()
-
-        # Log out the user
-        logout(self.request)
 
         messages.success(self.request, 'Your application to become a candidate has been submitted successfully.')
         return super().form_valid(form)
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = 'candidate_application_list.html'
     model = CandidateApplication
@@ -68,10 +80,7 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
             try:
                 application = CandidateApplication.objects.get(pk=application_id)
                 user = application.user
-
-                voter_group = Group.objects.get(name='voter')
-                user.groups.remove(voter_group)
-
+                user_halka = user.halka
                 candidate_group = Group.objects.get(name='candidate')
                 user.groups.add(candidate_group)
 
@@ -81,7 +90,8 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                 candidate, created = Candidate.objects.get_or_create(
                 user=user,
                 party=application.party,
-                is_approved=True 
+                halka = user_halka,
+                is_approved=True
                 )
 
                 send_mail(
@@ -92,7 +102,8 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
                     fail_silently=False,
                 )
                 
-                # Delete the CandidateApplication instance
+                voter_group = Group.objects.get(name='voter')
+                user.groups.remove(voter_group)
                 application.delete()
 
                 messages.success(request, 'Application accepted and user promoted to candidate.')
@@ -101,7 +112,9 @@ class CandidateApplicationListView(LoginRequiredMixin, UserPassesTestMixin, List
 
         return self.get(request, *args, **kwargs)
 
+
 @method_decorator(login_required, name='dispatch')
+@method_decorator(voter_required, name='dispatch')
 class VoteView(LoginRequiredMixin, FormView):
     template_name = 'vote.html'
     form_class = VoteForm
@@ -126,29 +139,40 @@ class VoteView(LoginRequiredMixin, FormView):
         voter = self.request.user
         halka = voter.halka
 
-        if Vote.objects.filter(voter=voter, halka=halka).exists():
+        try:
+            polling_schedule = PollingSchedule.objects.latest('start_datetime')
+        except PollingSchedule.DoesNotExist:
+            return redirect('no-polling-schedule')
+
+        if Vote.objects.filter(voter=voter, halka=halka, polling_schedule=polling_schedule).exists():
             return redirect('vote-cast-multiple-times')
             
-        vote = Vote(voter=voter, candidate=candidate, halka=halka)
+        vote = Vote(voter=voter, candidate=candidate, halka=halka, polling_schedule=polling_schedule)
         vote.save()
 
-        candidate_vote = Vote.objects.get(voter=voter, candidate=candidate)
+        candidate_vote, created = Vote.objects.get_or_create(
+            voter=voter, candidate=candidate, halka=halka, polling_schedule=polling_schedule
+        )
         candidate_vote.vote_count += 1
         candidate_vote.save()
 
         messages.success(self.request, 'Your vote has been cast successfully.')
         return redirect('vote-cast-success')
 
+
 @method_decorator(login_required, name='dispatch')
+@method_decorator(voter_required, name='dispatch')
 class VoteCastedSuccessView(TemplateView):
     template_name = 'vote_casted_success.html'
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(voter_required, name='dispatch')
 class VoteCastedMultipleTimesView(TemplateView):
     template_name = 'vote_casted_multiple.html'
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
 class PollingScheduleView(UserPassesTestMixin, FormView):
     template_name = 'set_polling_schedule.html'
     form_class = PollingScheduleForm
@@ -157,24 +181,56 @@ class PollingScheduleView(UserPassesTestMixin, FormView):
         return self.request.user.groups.filter(name='admin').exists()
 
     def form_valid(self, form):
+        start_datetime = form.cleaned_data['start_datetime']
+        end_datetime = form.cleaned_data['end_datetime']
+        
+        start_date = start_datetime.date()
+        end_date = end_datetime.date()
+        start_time = start_datetime.time()
+        end_time = end_datetime.time()
+
+        now = datetime.now(pytz.timezone('Asia/Karachi'))
+        current_date = now.date()
+        current_time = now.time()
+        
+        if start_date < current_date and start_time < current_time:
+            messages.error(self.request, 'Start datetime cannot be in the past.')
+            return self.form_invalid(form)
+
+        if end_date < current_date and end_time < current_time:
+            messages.error(self.request, 'End datetime cannot be in the past.')
+            return self.form_invalid(form)
+
+        if start_datetime >= end_datetime:
+            messages.error(self.request, 'End datetime should be more than start datetime.')
+            return self.form_invalid(form)
+
         form.save()
         messages.success(self.request, 'Polling schedule has been set successfully.')
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy('superuser-dashboard')
+        return reverse_lazy('set-polling-schedule')
+
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(candidate_required, name='dispatch')
 class CandidateTotalVotesView(LoginRequiredMixin, View):
     template_name = 'candidate_total_votes.html'
 
     def get(self, request):
         candidate = self.request.user
-        candidate_votes = Vote.objects.filter(candidate=candidate)
-        total_votes = sum(vote.vote_count for vote in candidate_votes)
         
         try:
+            # Get the latest polling schedule
             polling_schedule = PollingSchedule.objects.latest('start_datetime')
+
+            # Filter votes by candidate and polling schedule
+            candidate_votes = Vote.objects.filter(candidate=candidate, polling_schedule=polling_schedule)
+
+            # Calculate total votes for the candidate
+            total_votes = sum(vote.vote_count for vote in candidate_votes)
+
             now = datetime.now(pytz.timezone('Asia/Karachi'))
 
             start_date = polling_schedule.start_datetime.date()
@@ -206,20 +262,77 @@ class CandidateTotalVotesView(LoginRequiredMixin, View):
         messages.info(request, message)
         return render(request, self.template_name, context)
 
-@method_decorator(login_required(login_url='login'), name='dispatch')
-def candidate_profiles(request):
-    candidates = Candidate.objects.filter(is_approved=True)
-    return render(request, 'candidate_profiles.html', {'candidates': candidates})
+
 
 @method_decorator(login_required(login_url='login'), name='dispatch')
-class VotersListView(ListView):
-    template_name = 'voters_list.html'
-    context_object_name = 'voters'
+@method_decorator(voter_required, name='dispatch')
+class CandidateProfilesView(ListView):
+    model = Candidate
+    template_name = 'candidate_profiles.html'  # Create a template for rendering candidate profiles
+    context_object_name = 'candidates'  # The variable name to use in the template for the list of candidates
 
     def get_queryset(self):
-        # Retrieve the halka of the logged-in candidate
-        candidate_halka = self.request.user.halka
+        # Filter candidates based on the "halka" of the request user
+        return Candidate.objects.filter(halka=self.request.user.halka)
 
-        # Retrieve the voters in the candidate's halka
-        voters = CustomUser.objects.filter(halka=candidate_halka, groups__name='voter')
-        return voters
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # You can add additional context data here if needed
+        return context
+
+
+
+@method_decorator(login_required(login_url='login'), name='dispatch')
+@method_decorator(candidate_required, name='dispatch')
+class VotersListView(View):
+    template_name = 'voters_list.html'
+
+    def get(self, request, *args, **kwargs):
+        # Check if the user belongs to a Halka
+        if not request.user.halka:
+            return HttpResponseForbidden("You don't belong to any Halka")
+
+        # Get the Halka of the current user
+        user_halka = request.user.halka
+
+        # Fetch all users with the group 'voter' in the same Halka
+        voters_in_same_halka = CustomUser.objects.filter(halka=user_halka, groups__name='voter')
+
+        context = {
+            'voters_in_same_halka': voters_in_same_halka,
+        }
+
+        return render(request, self.template_name, context)
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
+class PreviousPollingScheduleListView(ListView):
+    model = PollingSchedule
+    template_name = 'previous_polling_schedules.html'
+    context_object_name = 'previous_polling_schedules'
+
+    def get_queryset(self):
+        # Get all polling schedules
+        all_polling_schedules = PollingSchedule.objects.all()
+
+        # Get the current datetime in the 'Asia/Karachi' timezone
+        now = datetime.now(pytz.timezone('Asia/Karachi'))
+
+        # Filter polling schedules where the end_datetime is in the past
+        # and is_voting_open is False using a list comprehension
+        filtered_polling_schedules = [schedule for schedule in all_polling_schedules if not schedule.is_voting_open()]
+
+        return filtered_polling_schedules
+
+
+@method_decorator(login_required, name='dispatch')
+@method_decorator(admin_required, name='dispatch')
+class CandidateListView(ListView):
+    model = Candidate
+    template_name = 'all_candidates.html'  # Create this template in your app's templates folder
+    context_object_name = 'candidates'  # The name to use in the template for the candidate queryset
+
+    def get_queryset(self):
+        # You can customize the queryset here, for example, to select related fields
+        return Candidate.objects.select_related('user', 'party', 'halka').all()

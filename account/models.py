@@ -5,7 +5,7 @@ from cloudinary.models import CloudinaryField
 
 
 class Halka(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
         return self.name
@@ -13,7 +13,7 @@ class Halka(models.Model):
     
 class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
-    cnic = models.CharField(_('CNIC'), max_length=15)
+    cnic = models.CharField(_('CNIC'), max_length=15, unique=True)
     confirm_password = models.CharField(_('confirm password'), max_length=128)
     is_approved = models.BooleanField(_('approved'), default=False)
     registration_token = models.CharField(_('registration token'), max_length=40, blank=True, null=True)

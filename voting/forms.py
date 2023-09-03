@@ -1,4 +1,6 @@
+from datetime import datetime
 from django import forms
+import pytz
 from account.models import CustomUser
 from .models import Party, CandidateApplication, PollingSchedule, Vote
 from cloudinary.forms import CloudinaryFileField
@@ -10,22 +12,6 @@ class CandidateApplicationForm(forms.ModelForm):
     class Meta:
         model = CandidateApplication
         fields = []
-
-    def save(self, user=None, commit=True):
-        party_name = self.cleaned_data.get('party_name')
-        symbol = self.cleaned_data.get('symbol')
-        
-        party, created = Party.objects.get_or_create(name=party_name)
-        if symbol:
-            party.symbol = symbol
-            party.save()
-
-        application = super().save(commit=False)
-        application.user = user
-        application.party = party
-        if commit:
-            application.save()
-        return application
 
 class VoteForm(forms.ModelForm):
     class Meta:

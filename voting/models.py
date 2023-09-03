@@ -6,7 +6,7 @@ import pytz
 
 
 class Party(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     symbol = CloudinaryField('party_symbol', null=True, blank=True)
 
     def __str__(self):
@@ -20,16 +20,6 @@ class CandidateApplication(models.Model):
 
     def __str__(self):
         return self.user.username
-
-
-class Vote(models.Model):
-    voter = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    candidate = models.ForeignKey(CustomUser, related_name='votes_received', on_delete=models.CASCADE)
-    halka = models.ForeignKey(Halka, on_delete=models.CASCADE)
-    vote_count = models.PositiveIntegerField(default=0)  # New field for vote count
-
-    def __str__(self):
-        return f"{self.vote_count} votes for {self.candidate.username}"
 
 
 class PollingSchedule(models.Model):
@@ -57,8 +47,19 @@ class PollingSchedule(models.Model):
 class Candidate(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     party = models.ForeignKey(Party, on_delete=models.CASCADE)
+    halka = models.ForeignKey(Halka, on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
     
+    
+class Vote(models.Model):
+    voter = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    candidate = models.ForeignKey(CustomUser, related_name='votes_received', on_delete=models.CASCADE)
+    halka = models.ForeignKey(Halka, on_delete=models.CASCADE)
+    polling_schedule = models.ForeignKey(PollingSchedule, on_delete=models.CASCADE, default=1)  # Add this field
+    vote_count = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.vote_count} votes for {self.candidate.username}"

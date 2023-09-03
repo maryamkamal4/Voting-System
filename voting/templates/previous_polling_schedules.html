@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h1>Previous Polling Schedules</h1>
+  <div class="row">
+    {% for schedule in previous_polling_schedules %}
+      <div class="col-md-4">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">Polling Schedule</h5>
+            <p class="card-text">
+              <strong>Start Date:</strong> {{ schedule.start_datetime|date:"F d, Y" }}<br>
+              <strong>Start Time:</strong> {{ schedule.start_datetime|time:"h:i A" }}<br>
+              <strong>End Date:</strong> {{ schedule.end_datetime|date:"F d, Y" }}<br>
+              <strong>End Time:</strong> {{ schedule.end_datetime|time:"h:i A" }}
+            </p>
+            <p class="text-danger">Voting has Ended</p>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}
