@@ -4,3 +4,6 @@
 # Ignore Python cache directories
 __pycache__/
 *.sqlite3
+
+# Ignore Virtual Environment
+venv/
